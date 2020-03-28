@@ -31,7 +31,9 @@
 #include <utils/regproc.h>
 #include <utils/varlena.h>
 #endif
+#if PG_VERSION_NUM < 120000
 #include <utils/tqual.h>
+#endif
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/datum.h"
@@ -432,7 +434,7 @@ setup_firstcall(FuncCallContext  *funcctx, text *name) {
 	st->index = gist_index_open(st->relvar);
 	funcctx->user_fctx = (void*)st;
 
-	tupdesc = CreateTemplateTupleDesc(st->index->rd_att->natts+2, false);
+	tupdesc = CreateTemplateTupleDesc(st->index->rd_att->natts+2);
 	TupleDescInitEntry(tupdesc, 1, "level", INT4OID, -1, 0);
 	TupleDescInitEntry(tupdesc, 2, "valid", BOOLOID, -1, 0);
 	for (i = 0; i < st->index->rd_att->natts; i++) {
@@ -450,7 +452,9 @@ setup_firstcall(FuncCallContext  *funcctx, text *name) {
 	st->dvalues = (Datum *) palloc((tupdesc->natts+2) * sizeof(Datum));
 	st->nulls = palloc((tupdesc->natts+2) * sizeof(*st->nulls));
 
+#if PG_VERSION_NUM < 120000
 	funcctx->slot = TupleDescGetSlot(tupdesc);
+#endif
 	funcctx->attinmeta = TupleDescGetAttInMetadata(tupdesc);
 
 	MemoryContextSwitchTo(oldcontext);
@@ -678,7 +682,7 @@ gin_setup_firstcall(FuncCallContext  *funcctx, text *name, int attnum) {
 
 	funcctx->user_fctx = (void*)st;
 
-	tupdesc = CreateTemplateTupleDesc(2, false);
+	tupdesc = CreateTemplateTupleDesc(2);
 	TupleDescInitEntry(tupdesc, 1, "value",
 			TS_GET_TYPEVAL(st, st->attnum, atttypid),
 			TS_GET_TYPEVAL(st, st->attnum, atttypmod),
@@ -687,7 +691,9 @@ gin_setup_firstcall(FuncCallContext  *funcctx, text *name, int attnum) {
 
 	memset( st->nulls, ISNOTNULL, 2*sizeof(*st->nulls) );
 
+#if PG_VERSION_NUM < 120000
 	funcctx->slot = TupleDescGetSlot(tupdesc);
+#endif
 	funcctx->attinmeta = TupleDescGetAttInMetadata(tupdesc);
 
 	MemoryContextSwitchTo(oldcontext);
@@ -1148,7 +1154,7 @@ spgist_print(PG_FUNCTION_ARGS)
 		prst->index = index;
 		initSpGistState(&prst->state, index);
 
-		tupdesc = CreateTemplateTupleDesc(3 /* types */ + 1 /* level */ + 1 /* nlabel */ +  2 /* tids */ + 1, false);
+		tupdesc = CreateTemplateTupleDesc(3 /* types */ + 1 /* level */ + 1 /* nlabel */ +  2 /* tids */ + 1);
 		TupleDescInitEntry(tupdesc, 1, "tid", TIDOID, -1, 0);
 		TupleDescInitEntry(tupdesc, 2, "allthesame", BOOLOID, -1, 0);
 		TupleDescInitEntry(tupdesc, 3, "node", INT4OID, -1, 0);
@@ -1161,7 +1167,9 @@ spgist_print(PG_FUNCTION_ARGS)
 		TupleDescInitEntry(tupdesc, 8, "leaf",
 				(prst->state.attType.type == VOIDOID) ? INT4OID : prst->state.attType.type, -1, 0);
 
+#if PG_VERSION_NUM < 120000
 		funcctx->slot = TupleDescGetSlot(tupdesc);
+#endif
 		funcctx->attinmeta = TupleDescGetAttInMetadata(tupdesc);
 
 		funcctx->user_fctx = (void*)prst;
